@@ -127,7 +127,7 @@ const deleteBlog = async (req, res) => {
     }
 
     // Check if the user is the author of the blog
-    if (!blog.author.equals(req.user.id)) {
+    if (!blog.author.equals(req.user.id) && req.user.role !== "admin") {
       return res.status(403).json({ message: "You can delete this Blog" });
     }
 
