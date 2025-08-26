@@ -42,18 +42,39 @@ const createBlog = async (req, res) => {
 
 const getBlogs = async (req, res) => {
   try {
+    //Exract page and limit  from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    //Calculate skip
+    const skip = (page - 1) * limit;
+
     // Fecth blogs from db
     const blogs = await Blog.find()
       .populate("author", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     // check whether blogs exist or not
     if (blogs.length === 0) {
       return res.status(404).json({ message: "No blogs found" });
     }
 
+    //Count total number of blogs
+    const totalBlogs = await Blog.countDocuments();
+
     // send back blogs
-    res.status(200).json({ message: "Blogs retrieved successfully", blogs });
+    res
+      .status(200)
+      .json({
+        message: "Blogs retrieved successfully",
+        page,
+        limit,
+        totalBlogs,
+        totalPages: Math.ceil(totalBlogs / limit),
+        blogs,
+      });
   } catch (error) {
     console.error("Error in retrieving blogs:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -99,11 +120,11 @@ const updateBlog = async (req, res) => {
     const { title, content } = req.body;
     if (title) blog.title = title;
     if (content) blog.content = content;
-    
+
     // If a new image file is provided, upload it to Cloudinary
-    if(req.file){
-      const result = await uploadOnCloudinary(req.file.path)
-      if(result) blog.image = result.secure_url 
+    if (req.file) {
+      const result = await uploadOnCloudinary(req.file.path);
+      if (result) blog.image = result.secure_url;
     }
 
     //save and return the updated blog

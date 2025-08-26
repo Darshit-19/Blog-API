@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createBlog, getBlogs , getBlogById , updateBlog , deleteBlog} = require("../controllers/blogController");
+const { createBlog, getBlogs , getBlogById , updateBlog , deleteBlog} = require("../controllers/blog");
 const authMiddleware = require("../middleware/auth");
 const upload = require("../middleware/upload");
 
