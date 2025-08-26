@@ -42,15 +42,23 @@ const createBlog = async (req, res) => {
 
 const getBlogs = async (req, res) => {
   try {
-    //Exract page and limit  from query
+    //Extract page ,limit ,author & keyword
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const author = req.query.author;
+    const titleKeyword = req.query.keyword;
+
+    //create filter
+    let filter = {};
+
+    if (titleKeyword) filter.title = { $regex: titleKeyword, $options: "i" };
+    if (author) filter.author = author;
 
     //Calculate skip
     const skip = (page - 1) * limit;
 
     // Fecth blogs from db
-    const blogs = await Blog.find()
+    const blogs = await Blog.find(filter)
       .populate("author", "name email")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -62,19 +70,17 @@ const getBlogs = async (req, res) => {
     }
 
     //Count total number of blogs
-    const totalBlogs = await Blog.countDocuments();
+    const totalBlogs = await Blog.countDocuments(filter);
 
     // send back blogs
-    res
-      .status(200)
-      .json({
-        message: "Blogs retrieved successfully",
-        page,
-        limit,
-        totalBlogs,
-        totalPages: Math.ceil(totalBlogs / limit),
-        blogs,
-      });
+    res.status(200).json({
+      message: "Blogs retrieved successfully",
+      page,
+      limit,
+      totalBlogs,
+      totalPages: Math.ceil(totalBlogs / limit),
+      blogs,
+    });
   } catch (error) {
     console.error("Error in retrieving blogs:", error);
     res.status(500).json({ message: "Internal server error" });
